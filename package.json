@@ -1,0 +1,57 @@
+{
+  "name": "@octamap/vite-hls",
+  "version": "1.0.0",
+  "description": "Making it super easy to use HLS video streaming instead of .mov, .mp4 and other slow video formats ",
+  "type": "module",
+  "keywords": [
+    "html",
+    "vite",
+    "compiler",
+    "built-time",
+    "components"
+  ],
+  "private": false,
+  "scripts": {
+    "build": "tsc",
+    "publish-npmjs": "npm publish --access public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./index.ts"
+    }
+  },
+  "main": "dist/index.js",
+  "jsdelivr": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/octamap/vite-hls.git"
+  },
+  "files": [
+    "dist/*"
+  ],
+  "author": "octamap",
+  "license": "MIT",
+  "peerDependencies": {},
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "fs-extra": "^11.2.0",
+    "jsdom": "^25.0.1",
+    "ora": "^8.1.1",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^20.2.1",
+    "path": "^0.12.7",
+    "tsconfig": "*",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.3",
+    "vite": "^5.4.8",
+    "vite-plugin-css-injected-by-js": "^3.4.0",
+    "vite-plugin-dts": "^3.9.0",
+    "vue-tsc": "^2.0.4"
+  }
+}
