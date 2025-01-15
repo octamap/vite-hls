@@ -4,6 +4,10 @@
 
 Transform your video workflow with the power of HLS. With this plugin, you can seamlessly prepare your SPA website to use adaptive streaming for videos, making them perform better across devices and network conditions. No need for third-party services like Cloudflare Stream—just simple, effective HLS integration.
 
+## ✅ No runtime javascript
+
+This plugin adds **ZERO** runtime javascript. Everything is performed & compiled during build. (Using this plugin wont add any overhead) 
+
 ## 🚀 Key Features
 
 - **Automatic HLS Conversion**
@@ -136,11 +140,9 @@ export default defineConfig({
 - [What is HLS?](https://en.wikipedia.org/wiki/HTTP_Live_Streaming)
 
 ## 🤝 Contributions
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/your-repo/vite-hls-plugin/issues).
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/octamap/vite-hls/issues).
 
 ## 📜 License
 This project is licensed under the [MIT License](LICENSE).
 
----
 
-**Transform your video streaming experience today with Vite HLS Plugin!**

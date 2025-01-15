@@ -4,11 +4,12 @@
   "description": "Making it super easy to use HLS video streaming instead of .mov, .mp4 and other slow video formats ",
   "type": "module",
   "keywords": [
-    "html",
     "vite",
+    "vite-plugin",
     "compiler",
-    "built-time",
-    "components"
+    "hls",
+    "video-streaming",
+    "stream video"
   ],
   "private": false,
   "scripts": {
