@@ -1,5 +1,5 @@
+import ffmpeg from 'fluent-ffmpeg';
 import chalk from 'chalk';
-import  ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from "ffmpeg-static";
 import path from "path";
 import ConvertResult from "../types/ConvertResult.js";
@@ -34,7 +34,7 @@ export default async function convertToHLS(
         if (existingTask) {
             return await existingTask
         }
-        let spinner = ora(`Converting to HLS... (${chalk.blue(hlsM3U8Relative)})`)
+        let spinner = ora(`Converting to HLS... (${chalk.blue(hlsM3U8Relative)})`).start()
         const task: Promise<ConvertResult> = (async () => {
             try {
                 // Use ffmpeg-static binary
@@ -67,8 +67,9 @@ export default async function convertToHLS(
                 return { hlsM3U8Relative: "", success: false };
             }
         })()
-        spinner.succeed(`Converted to HLS (${chalk.green(hlsM3U8Relative)})`)
         ongoing.set(absoluteVideoPath, task)
+        await task
+        spinner.succeed(`Converted to HLS (${chalk.green(hlsM3U8Relative)})`)
         return task;
     } catch (err) {
         console.error("Error transcoding to HLS:", err);

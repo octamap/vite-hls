@@ -40,6 +40,7 @@ export default function ViteHLSPlugin(
             const targetDir = isDev
                 ? `public/${cacheDir}`
                 : config.build.outDir
+        
             await fs.ensureDir(targetDir);
             const newCode = await processCode(code, codePath.path, absolutePublicFolder, targetDir, hlsOutput, segmentDuration, isDev)
             if (newCode) {

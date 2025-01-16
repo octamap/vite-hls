@@ -1,5 +1,5 @@
-import chalk from 'chalk';
 import ffmpeg from 'fluent-ffmpeg';
+import chalk from 'chalk';
 import ffmpegPath from "ffmpeg-static";
 import path from "path";
 import fs from "fs-extra";
@@ -23,7 +23,7 @@ export default async function convertToHLS(absoluteVideoPath, distDir, hlsDir, s
         if (existingTask) {
             return await existingTask;
         }
-        let spinner = ora(`Converting to HLS... (${chalk.blue(hlsM3U8Relative)})`);
+        let spinner = ora(`Converting to HLS... (${chalk.blue(hlsM3U8Relative)})`).start();
         const task = (async () => {
             try {
                 // Use ffmpeg-static binary
@@ -52,8 +52,9 @@ export default async function convertToHLS(absoluteVideoPath, distDir, hlsDir, s
                 return { hlsM3U8Relative: "", success: false };
             }
         })();
-        spinner.succeed(`Converted to HLS (${chalk.green(hlsM3U8Relative)})`);
         ongoing.set(absoluteVideoPath, task);
+        await task;
+        spinner.succeed(`Converted to HLS (${chalk.green(hlsM3U8Relative)})`);
         return task;
     }
     catch (err) {
