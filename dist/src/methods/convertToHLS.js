@@ -7,6 +7,7 @@ import ora from 'ora';
 const ongoing = new Map();
 export default async function convertToHLS(absoluteVideoPath, distDir, hlsDir, segmentDuration) {
     try {
+        await fs.ensureDir(hlsDir);
         const base = path.parse(absoluteVideoPath).name;
         const targetFolder = path.join(hlsDir, base);
         await fs.ensureDir(targetFolder);

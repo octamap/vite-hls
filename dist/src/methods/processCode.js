@@ -1,4 +1,3 @@
-import fs from 'fs-extra';
 import path from "path";
 import locateVideoFile from "./locateVideoFile.js";
 import convertToHLS from './convertToHLS.js';
@@ -35,8 +34,6 @@ export default async function processCode(code, codePath, publicFolder, distPath
             console.warn(`Warning: Video file not found: ${urlWithoutQuery}`);
             return;
         }
-        // 3 - Ensure the HLS folder exists
-        await fs.ensureDir(hlsDir);
         // 4 - Transcode to HLS
         const { hlsM3U8Relative, success } = await convertToHLS(absoluteVideoPath, distPath, hlsDir, segmentDuration);
         if (!success)
@@ -44,7 +41,7 @@ export default async function processCode(code, codePath, publicFolder, distPath
         // 5 - Prepare replacement string
         const newUrl = dev ? `.cache/${hlsM3U8Relative}` : hlsM3U8Relative;
         hasChanges = true;
-        code = code.replace(videoUrl, newUrl);
+        code = code.replaceAll(videoUrl, newUrl);
     }));
     return hasChanges ? code : null;
 }

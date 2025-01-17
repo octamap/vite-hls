@@ -40,7 +40,7 @@ export default async function processCode(
     }
     
     let hasChanges = false;
-
+    
     await Promise.all(Array.from(hlsMatches).map(async videoUrl => {
         const urlWithoutQuery = videoUrl.slice(0, -4); // Remove '?hls'
 
@@ -51,9 +51,6 @@ export default async function processCode(
             console.warn(`Warning: Video file not found: ${urlWithoutQuery}`);
             return;
         }
-
-        // 3 - Ensure the HLS folder exists
-        await fs.ensureDir(hlsDir);
 
         // 4 - Transcode to HLS
         const { hlsM3U8Relative, success } = await convertToHLS(
@@ -68,7 +65,7 @@ export default async function processCode(
         const newUrl = dev ? `.cache/${hlsM3U8Relative}` : hlsM3U8Relative;
 
         hasChanges = true
-        code = code.replace(videoUrl, newUrl)
+        code = code.replaceAll(videoUrl, newUrl)
     }))
 
     return hasChanges ? code : null;

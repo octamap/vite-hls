@@ -15,10 +15,11 @@ export default async function convertToHLS(
     segmentDuration: number
 ): Promise<ConvertResult> {
     try {
+        await fs.ensureDir(hlsDir);
+
         const base = path.parse(absoluteVideoPath).name;
         const targetFolder = path.join(hlsDir, base);
         await fs.ensureDir(targetFolder);
-
         const m3u8Path = path.join(targetFolder, "output.m3u8");
 
         // Skip if we already transcoded it (optional)
