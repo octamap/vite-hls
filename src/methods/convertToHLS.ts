@@ -5,12 +5,13 @@ import path from "path";
 import ConvertResult from "../types/ConvertResult.js";
 import fs from "fs-extra"
 import ora from 'ora';
+import generateVideoHash from './generateVideoHash.js';
 
 const ongoing = new Map<string, Promise<ConvertResult>>()
 
 export default async function convertToHLS(
     absoluteVideoPath: string,
-    distDir: string,
+    cachePath: string,
     hlsDir: string,
     segmentDuration: number
 ): Promise<ConvertResult> {
@@ -23,12 +24,17 @@ export default async function convertToHLS(
         const m3u8Path = path.join(targetFolder, "output.m3u8");
 
         // Skip if we already transcoded it (optional)
-        const hlsM3U8Relative = path.relative(distDir, m3u8Path)
-        if (fs.existsSync(m3u8Path)) {
-            return {
-                hlsM3U8Relative,
-                success: true,
-            };
+        const hlsM3U8Relative = path.relative(cachePath, m3u8Path)
+        const hash = await generateVideoHash(absoluteVideoPath)
+        const hashPath = path.join(targetFolder, "tag")
+        if (fs.existsSync(m3u8Path) && fs.existsSync(hashPath)) {
+            const hashFile = await fs.readFile(hashPath, "utf-8")
+            if (hashFile == hash) {
+                return {
+                    hlsM3U8Relative,
+                    success: true,
+                };
+            }
         }
 
         const existingTask = ongoing.get(absoluteVideoPath)
@@ -61,7 +67,8 @@ export default async function convertToHLS(
                         .run();
                 });
 
-                const hlsM3U8Relative = path.relative(distDir, m3u8Path);
+                await fs.writeFile(hashPath, hash, "utf-8")
+                const hlsM3U8Relative = path.relative(cachePath, m3u8Path);
                 return { hlsM3U8Relative, success: true };
             } catch (error) {
                 console.error("Error transcoding to HLS:", error);

@@ -1,8 +1,9 @@
 import path from "path";
 import locateVideoFile from "./locateVideoFile.js";
 import convertToHLS from './convertToHLS.js';
-export default async function processCode(code, codePath, publicFolder, distPath, hlsOutput, segmentDuration, dev) {
-    const hlsDir = path.join(distPath, hlsOutput);
+import log from "../log.js";
+export default async function processCode(code, codePath, publicFolder, cachePath, hlsOutput, segmentDuration, dev) {
+    const hlsDir = path.join(cachePath, hlsOutput);
     if (!code.includes("?hls"))
         return null;
     // 1 - Find all string literals
@@ -29,13 +30,13 @@ export default async function processCode(code, codePath, publicFolder, distPath
     await Promise.all(Array.from(hlsMatches).map(async (videoUrl) => {
         const urlWithoutQuery = videoUrl.slice(0, -4); // Remove '?hls'
         // 2 - Convert that path to an absolute path on disk
-        const absoluteVideoPath = await locateVideoFile(codePath, urlWithoutQuery, distPath, publicFolder);
+        const absoluteVideoPath = await locateVideoFile(codePath, urlWithoutQuery, cachePath, publicFolder);
         if (!absoluteVideoPath) {
-            console.warn(`Warning: Video file not found: ${urlWithoutQuery}`);
+            log(`Warning: Video file not found: ${urlWithoutQuery}`, "warn");
             return;
         }
         // 4 - Transcode to HLS
-        const { hlsM3U8Relative, success } = await convertToHLS(absoluteVideoPath, distPath, hlsDir, segmentDuration);
+        const { hlsM3U8Relative, success } = await convertToHLS(absoluteVideoPath, cachePath, hlsDir, segmentDuration);
         if (!success)
             return;
         // 5 - Prepare replacement string
