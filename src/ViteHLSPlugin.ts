@@ -56,6 +56,7 @@ export default function ViteHLSPlugin(
         generateBundle: {
             order: "post",
             async handler(_) {
+                if (isDev) return;
                 const distDir = config.build?.outDir || 'dist'; // Default Vite output directory
                 // Ensure output folder exists
                 if (!fs.existsSync(distDir)) {
@@ -95,6 +96,7 @@ export default function ViteHLSPlugin(
             }
         },
         async closeBundle() {
+            if (isDev) return;
             let spinner = ora(logText("🔄 Post processing...")).start();
             const distDir = config.build?.outDir || 'dist'; // Default Vite output directory
             // Ensure output folder exists
