@@ -24,6 +24,7 @@ export default function ViteHLSPlugin(
     let isDev = false;
     let cachePath = ""
     async function compile(code: string, codePath: string) {
+        if (!codePath.includes(".html")) return;
         await fs.ensureDir(cachePath);
         return await processCode(code, codePath, absolutePublicFolder, cachePath, hlsOutput, segmentDuration, isDev)
     }

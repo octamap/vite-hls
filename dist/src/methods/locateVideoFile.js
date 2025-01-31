@@ -1,30 +1,27 @@
-import fs from 'fs-extra';
+import fs from 'fs/promises';
 import path from "path";
 /**
- * Attempt to locate the original video file within `distDir` or `public` or wherever
- * you might have placed it. This is a naive approach:
- *  1) Check if `videoUrl` is already absolute (like /videos/foo.mp4),
- *     then see if that path is in dist.
- *  2) If not found, see if it's in `public` folder, or the original `src` folder.
- *  3) The video url might be relative to the currentPath, check if the video exists relative to currentPath
+ * Attempt to locate the original video file within `distDir`, `publicDir`, or relative to `currentPath`.
+ * This function checks different locations asynchronously.
  */
 export default async function locateVideoFile(currentPath, videoUrl, distDir, publicDir) {
     // Remove leading slash if present
     const trimmedUrl = videoUrl.replace(/^\//, "");
-    // Check in dist directory
-    const candidateDistPath = path.join(distDir, trimmedUrl);
-    if (fs.existsSync(candidateDistPath)) {
-        return candidateDistPath;
-    }
-    // Check in public directory
-    const candidatePublicPath = path.join(publicDir, trimmedUrl);
-    if (fs.existsSync(candidatePublicPath)) {
-        return candidatePublicPath;
-    }
-    // Check relative to currentPath
-    const candidateRelativePath = path.join(currentPath, trimmedUrl);
-    if (fs.existsSync(candidateRelativePath)) {
-        return candidateRelativePath;
+    // Possible paths to check
+    const candidatePaths = [
+        path.join(distDir, trimmedUrl),
+        path.join(publicDir, trimmedUrl),
+        path.join(currentPath, trimmedUrl)
+    ];
+    // Check if file exists in any of these paths
+    for (const candidatePath of candidatePaths) {
+        try {
+            await fs.access(candidatePath);
+            return candidatePath; // Return first found path
+        }
+        catch {
+            // If access fails, move to the next candidate path
+        }
     }
     // If not found in any location, return null
     return null;

@@ -12,6 +12,8 @@ export default function ViteHLSPlugin(opts = {}) {
     let isDev = false;
     let cachePath = "";
     async function compile(code, codePath) {
+        if (!codePath.includes(".html"))
+            return;
         await fs.ensureDir(cachePath);
         return await processCode(code, codePath, absolutePublicFolder, cachePath, hlsOutput, segmentDuration, isDev);
     }
@@ -44,6 +46,8 @@ export default function ViteHLSPlugin(opts = {}) {
         generateBundle: {
             order: "post",
             async handler(_) {
+                if (isDev)
+                    return;
                 const distDir = config.build?.outDir || 'dist'; // Default Vite output directory
                 // Ensure output folder exists
                 if (!fs.existsSync(distDir)) {
@@ -84,6 +88,8 @@ export default function ViteHLSPlugin(opts = {}) {
             }
         },
         async closeBundle() {
+            if (isDev)
+                return;
             let spinner = ora(logText("🔄 Post processing...")).start();
             const distDir = config.build?.outDir || 'dist'; // Default Vite output directory
             // Ensure output folder exists
