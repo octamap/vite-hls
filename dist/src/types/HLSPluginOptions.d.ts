@@ -11,6 +11,5 @@ export default interface HlsPluginOptions {
     hlsOutput?: string;
     /** Duration of each HLS segment (seconds) */
     segmentDuration?: number;
-    cacheDir?: string;
     publicFolder?: string;
 }

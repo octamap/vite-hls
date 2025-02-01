@@ -1,53 +1,57 @@
-import crypto, { BinaryLike } from "crypto"
-import fs from "fs"
-import log from "../log.js"
-import chalk from "chalk"
+import crypto from "crypto";
+import fs from "fs/promises";
 
-const existingTasks = new Map<string, Promise<string>>()
-
+/**
+ * Generates an MD5 hash for a file by reading:
+ * - The file size,
+ * - The first 0.5 KB,
+ * - 0.5 KB from the middle,
+ * - The last 0.5 KB.
+ *
+ * This ensures the hash changes when the file size or sampled content changes.
+ *
+ * @param filePath Path to the file.
+ * @returns A promise that resolves with the MD5 hash.
+ */
 export default async function generateVideoHash(filePath: string): Promise<string> {
-  const existingTask = existingTasks.get(filePath)
-  if (existingTask) {
-    return existingTask
-  }
-  const newTask = new Promise<string>((resolve, reject) => {
-    try {
-      fs.stat(filePath, (err, stats) => {
-        if (err) {
-          return reject(err);
-        }
+  // Open the file for reading.
+  const fileHandle = await fs.open(filePath, "r");
+  try {
+    const { size } = await fileHandle.stat();
+    const segmentLength = 512; // 0.5 KB per segment
+    const buffers: Buffer[] = [];
 
-        // Use file size and last modification time to form the base of the hash
-        const fileData = `${stats.size}-${stats.mtimeMs}`;
+    // Function to read a segment at a given offset.
+    const readSegment = async (offset: number) => {
+      const buf = Buffer.alloc(segmentLength);
+      const { bytesRead } = await fileHandle.read(buf, 0, segmentLength, offset);
+      buffers.push(bytesRead < segmentLength ? buf.slice(0, bytesRead) : buf);
+    };
 
-        // Read a portion of the file to include in the hash
-        const readStream = fs.createReadStream(filePath, { end: 1024 }); // Read the first 1KB
+    // Read the first segment.
+    await readSegment(0);
 
-        const hash = crypto.createHash('sha256');
-        hash.update(fileData); // Add file data to the hash
+    // Read the middle segment (centered).
+    const middleOffset = Math.max(0, Math.floor(size / 2) - Math.floor(segmentLength / 2));
+    await readSegment(middleOffset);
 
-        readStream.on('data', (chunk) => {
-          hash.update((typeof chunk === "string" ? Buffer.from(chunk) : chunk) as BinaryLike);
-        });
+    // Read the last segment.
+    const lastOffset = size > segmentLength ? size - segmentLength : 0;
+    await readSegment(lastOffset);
 
-        readStream.on('end', () => {
-          resolve(hash.digest('hex')); // Return the hash in hexadecimal format
-        });
+    // Create an MD5 hash.
+    const hash = crypto.createHash("md5");
 
-        readStream.on('error', (error) => {
-          reject(error);
-        });
-      });
-    } catch (error) {
-      log("Failed at generating hash for " + chalk.blue(filePath), "error")
-      console.error(error)
-      reject(error)
+    // Update the hash with the file size.
+    hash.update(String(size));
+
+    // Update the hash with each buffer segment.
+    for (const buf of buffers) {
+      hash.update(buf);
     }
-  });
-  existingTasks.set(filePath, newTask)
-  await newTask
-  setTimeout(() => {
-    existingTasks.delete(filePath)
-  }, 1000 * 2);
-  return newTask
+
+    return hash.digest("hex");
+  } finally {
+    await fileHandle.close();
+  }
 }

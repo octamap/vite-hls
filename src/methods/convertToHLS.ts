@@ -3,11 +3,10 @@ import chalk from 'chalk';
 import ffmpegPath from "ffmpeg-static";
 import path from "path";
 import ConvertResult from "../types/ConvertResult.js";
-import fs from "fs-extra"
+import fs from "fs/promises"
 import ora from 'ora';
 import generateVideoHash from './generateVideoHash.js';
 import logText from '../logText.js';
-import log from '../log.js';
 
 const lastCheckedHash = new Map<string, number>()
 const ongoing = new Map<string, Promise<ConvertResult>>()
@@ -24,39 +23,52 @@ export default async function convertToHLS(
             return await existingTask
         }
         const task: Promise<ConvertResult> = (async () => {
-            await fs.ensureDir(hlsDir);
+            await fs.mkdir(hlsDir, {recursive: true});
 
             const base = path.parse(absoluteVideoPath).name;
             const targetFolder = path.join(hlsDir, base);
-            await fs.ensureDir(targetFolder);
-            const m3u8Path = path.join(targetFolder, "output.m3u8");
-
-            // Skip if we already transcoded it (optional)
-            const hlsM3U8Relative = path.relative(cachePath, m3u8Path)
-            const hashPath = path.join(targetFolder, "tag")
+            await fs.mkdir(targetFolder, {recursive: true});
+        
+            // 1 - Skip transpile if we already have an up to date transpile inside the cache folder
             let hash: string | undefined
-            if (fs.existsSync(m3u8Path) && fs.existsSync(hashPath)) {
-                const time = lastCheckedHash.get(hashPath)
-                if (time != undefined && (Date.now() - time) < (1000 * 4)) {
-                    return {
-                        hlsM3U8Relative,
-                        success: true
+            const filesOfTarget = await fs.readdir(targetFolder, { withFileTypes: true })
+            try {
+                const outputFileName = filesOfTarget.find(x => x.name.endsWith(".m3u8"))
+                if (outputFileName) {
+                    const m3u8Path = path.join(targetFolder, outputFileName.name);
+                    const time = lastCheckedHash.get(m3u8Path)
+                    if (time != undefined && (Date.now() - time) < (1000 * 4)) {
+                        return {
+                            hlsM3U8Relative: path.relative(cachePath, m3u8Path),
+                            success: true
+                        }
+                    }
+                    hash = await generateVideoHash(absoluteVideoPath)
+                    const currentHash = outputFileName.name.slice(0, outputFileName.name.indexOf("."))
+                    lastCheckedHash.set(m3u8Path, Date.now())
+                    if (currentHash == hash) {
+                        return {
+                            hlsM3U8Relative: path.relative(cachePath, m3u8Path),
+                            success: true,
+                        };
                     }
                 }
-                hash = await generateVideoHash(absoluteVideoPath)
-                const hashFile = await fs.readFile(hashPath, "utf-8")
-                lastCheckedHash.set(hashPath, Date.now())
-                if (hashFile == hash) {
-                    return {
-                        hlsM3U8Relative,
-                        success: true,
-                    };
-                }
+            } catch {
+
             }
+        
+            hash ??= await generateVideoHash(absoluteVideoPath)
+            const m3u8Path = path.join(targetFolder, hash + ".m3u8")
+            const hlsM3U8Relative = path.relative(cachePath, m3u8Path)
+            
             let spinner = ora(logText(`Converting to HLS... (${chalk.blue(hlsM3U8Relative)})`)).start()
             try {
                 // Use ffmpeg-static binary
                 ffmpeg.setFfmpegPath(ffmpegPath || ""); // Set ffmpeg-static binary path
+
+                // Clear the target folder
+                const filesToRemove = filesOfTarget.map(x => path.join(targetFolder, x.name))
+                await Promise.all(filesToRemove.map(x => fs.rm(x)))
 
                 // Run FFmpeg
                 await new Promise<any>((resolve, reject) => {
@@ -69,7 +81,7 @@ export default async function convertToHLS(
                             "-hls_playlist_type vod",
                             `-hls_segment_filename ${path.join(
                                 targetFolder,
-                                "segment_%03d.ts"
+                                `${hash}_%03d.ts`
                             )}`,
                         ])
                         .output(m3u8Path)
@@ -78,8 +90,6 @@ export default async function convertToHLS(
                         .run();
                 });
 
-                hash ??= await generateVideoHash(absoluteVideoPath)
-                await fs.writeFile(hashPath, hash, "utf-8")
                 const hlsM3U8Relative = path.relative(cachePath, m3u8Path);
                 spinner.succeed(logText(`Converted to HLS (${chalk.green(hlsM3U8Relative)})`))
                 return { hlsM3U8Relative, success: true };

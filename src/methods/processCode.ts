@@ -18,7 +18,6 @@ export default async function processCode(
     // 1 - Find all string literals
     const findStrings = /(['"`])((?:\\.|(?!\1)[^\\])*)\1/g;
     const matches = [...code.matchAll(findStrings)];
-
     const hlsMatches = new Set<string>()
 
     for (const match of matches) {
@@ -61,10 +60,8 @@ export default async function processCode(
         if (!success) return;
 
         // 5 - Prepare replacement string
-        const newUrl = dev ? `.cache/${hlsM3U8Relative}` : hlsM3U8Relative;
-
         hasChanges = true
-        code = code.replaceAll(videoUrl, newUrl)
+        code = code.replaceAll(videoUrl, hlsM3U8Relative)
     }))
 
     return hasChanges ? code : null;

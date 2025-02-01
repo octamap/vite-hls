@@ -40,9 +40,8 @@ export default async function processCode(code, codePath, publicFolder, cachePat
         if (!success)
             return;
         // 5 - Prepare replacement string
-        const newUrl = dev ? `.cache/${hlsM3U8Relative}` : hlsM3U8Relative;
         hasChanges = true;
-        code = code.replaceAll(videoUrl, newUrl);
+        code = code.replaceAll(videoUrl, hlsM3U8Relative);
     }));
     return hasChanges ? code : null;
 }
